@@ -1,0 +1,23 @@
+name: Keep Streamlit App Alive
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"  # every 6 hours
+  workflow_dispatch:  # allows manual trigger
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Make Dummy Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          echo "Last refresh: $(date)" > keepalive.txt
+          git add keepalive.txt
+          git commit -m "🔄 Auto-commit to keep Streamlit alive"
+          git push
