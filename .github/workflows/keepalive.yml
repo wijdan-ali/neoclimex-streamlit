@@ -2,7 +2,7 @@ name: Keep Streamlit App Alive
 
 on:
   schedule:
-    - cron: "0 */6 * * *"  # every 6 hours
+    - cron: "0 */6 * * *"
   workflow_dispatch:
 
 jobs:
@@ -13,12 +13,14 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v3
 
-      - name: Setup Git Credentials and Push
+      - name: Keep Alive Commit
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           git config --global user.name "Auto Bot"
           git config --global user.email "auto-bot@example.com"
           echo "Last refresh: $(date)" > keepalive.txt
           git add keepalive.txt
-          git commit -m "🔄 Auto-commit to keep Streamlit alive" || echo "No changes to commit"
-          git remote set-url origin https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ github.repository }}
+          git commit -m "🔄 Auto-refresh Streamlit" || echo "Nothing to commit"
+          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}
           git push origin HEAD:main
