@@ -1,55 +1,13 @@
-import streamlit as st
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split 
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error, r2_score
-import matplotlib.pyplot as plt
+from pycaret.regression import *
+import streamlit as st
 
 
+#loading model
+v3 = load_model('v3_model')
 
-#Training the model
 
-sample = pd.read_csv("raw_data/exo_teq_results.csv")
-
-T_star = sample["st_teff"].values
-R_star = sample["st_rad"].values
-a_planet = sample["pl_orbsmax"].values
-
-#Engineering Features
-Feat1 = T_star.copy()
-Feat2 = np.sqrt(1 / a_planet)
-#Feat2 = np.sqrt(R_star / a_planet)
-Feat3 = T_star * np.sqrt(1 / a_planet)
-Feat4 = np.log10(T_star)
-Feat5 = np.log10(1 / a_planet)
-
-data_train = pd.DataFrame({
-    "feat1": Feat1,
-    "feat2": Feat2,
-    "feat3": Feat3,
-    "feat4": Feat4,
-    "feat5": Feat5,
-    #"feat6": Feat6,
-    "Teq": sample["pl_eqt"],
-    "type": sample["type"]
-})
-
-#hot_test = data_train[data_train["type"] == "hot"].sample(35)
-#hotter_test = data_train[data_train["type"] == "hotter"].sample(25)
-#cold_test = data_train[data_train["type"] == "cold"].sample(5)
-#temperate_test = data_train[data_train["type"] == "temperate"].sample(15)
-
-#data_test = pd.concat([hot_test, hotter_test, cold_test, temperate_test], ignore_index = True)
-#data_train = data_train.drop(data_test.index)
-
-x_train = data_train[["feat1", "feat2", "feat3", "feat4", "feat5"]].values
-y_train = data_train["Teq"].values
-#x_test = data_test[["feat1", "feat2","feat3", "feat4", "feat5"]].values
-#y_test = data_test["Teq"].values
-
-linreg = LinearRegression()
-linreg.fit(x_train, y_train)
 
 
 
@@ -73,30 +31,34 @@ with left1:
 
 
 F1 = sl
-F2 = np.sqrt(1 / au)
-F3 = sl * np.sqrt(1 / au)
+F2 = sl * (np.sqrt(1 / (2*au))) * ((1 - 0.3) ** 0.25)
+#F3 = sl * np.sqrt(1 / (2*au)) * ((1 - 0.3) ** 0.25)
 F4 = np.log10(sl)
-F5 = np.log10(1 / au)
+F5 = np.log10(1 / (2*au))
+F6 = np.log10(sl * np.sqrt(1 / (2*au)) * ((1 - 0.3) ** 0.25))
 
 
-input_data = np.array([[F1, F2, F3, F4, F5]])
+
+input_data = pd.DataFrame([[F1, F2, F4, F5, F6]], columns=['feat1', 'feat2', 'feat4', 'feat5', 'feat6'])
+
 if st.button("Predict Equilibrium Temperature"):
         
         with right1:
-            y_pred = linreg.predict(input_data)
-            result = float(f"{y_pred[0]:.2f}")
+            output = predict_model(v3, data = input_data)
+            y_pred = output.loc[0, 'prediction_label']
+            result = float(f"{y_pred:.2f}")
 
 
             #Deciding unit
             def decide_unit(result, unit):
                 if unit == "Celsius (°C)":
-                    result = float(f"{y_pred[0] - 273.15:.2f}")
+                    result = float(f"{y_pred - 273.15:.2f}")
                     u = "°C"
                 elif unit == "Fahrenheit (°F)":
-                    result = float(f"{((y_pred[0] - 273.15) * 9/5 + 32):.2f}")
+                    result = float(f"{((y_pred - 273.15) * 9/5 + 32):.2f}")
                     u = "°F"
                 else:
-                    result = float(f"{y_pred[0]:.2f}")
+                    result = float(f"{y_pred:.2f}")
                     u = "K"
                 return result, u
             
@@ -114,14 +76,14 @@ if st.button("Predict Equilibrium Temperature"):
                 color = "#FF6347"  
                 emoji = "🔥"
                 display_val = str(result) 
-                tags = ["Hot Jupiter"]
+                tags = ["Hot"]
                 type = f":red-background[{tags[0]}]"
             elif(int(result) <= 230):
                 result, u = decide_unit(result, unit)
                 color = "#1E90FF"  
                 emoji = "❄️"
                 display_val = str(result) 
-                tags = ["Cold Neptune"]
+                tags = ["Cold"]
                 type = f":blue-background[{tags[0]}]"
 
             
@@ -150,16 +112,3 @@ if st.button("Predict Equilibrium Temperature"):
             st.write(type)
             #st.header(f":MediumAquaMarine[{display_val}]")
             
-
-
-    
-
-
-
-
-
-
-
-#st.write(f"Test RMSE: {rmse:.2f}")
-#st.write(f"Test R^2 Score: {r2:.3f}")
-    
