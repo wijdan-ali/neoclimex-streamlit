@@ -5,8 +5,11 @@ import streamlit as st
 
 
 #loading model
-v3 = load_model('v3_model')
+@st.cache
+def model_load():
+    return load_model('v3_model')
 
+v3 = model_load()
 
 
 
@@ -112,3 +115,4 @@ if st.button("Predict Equilibrium Temperature"):
             st.write(type)
             #st.header(f":MediumAquaMarine[{display_val}]")
             
+
