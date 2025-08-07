@@ -1,6 +1,5 @@
 streamlit
-scikit-learn
+pycaret
 numpy
 pandas
-pycaret
-matplotlib
+
